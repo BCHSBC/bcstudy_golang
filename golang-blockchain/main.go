@@ -1,59 +1,27 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"fmt"
+	"strconv"
+
+	"github.com/BCHSBC/bcstudy_golang/blockchain"
 )
 
-// Blockchain - Public Distributed Database
-type BlockChain struct {
-	blocks []*Block
-}
-
-type Block struct {
-	Hash     []byte // Hash of the Block
-	Data     []byte // Contents of the Block
-	PrevHash []byte // Last Block Hash -> Link the Blocks
-}
-
-// Caculate the Hash Value of the Block
-func (b *Block) DeriveHash() {
-	info := bytes.Join([][]byte{b.Data, b.PrevHash}, []byte{})
-	hash := sha256.Sum256(info)
-	b.Hash = hash[:]
-}
-
-// Create Block- Params(data,prevHash)
-func CreateBlock(data string, prevHash []byte) *Block {
-	block := &Block{[]byte{}, []byte(data), prevHash}
-	block.DeriveHash()
-	return block
-}
-
-func (chain *BlockChain) AddBlock(data string) {
-	prevBlock := chain.blocks[len(chain.blocks)-1]
-	new := CreateBlock(data, prevBlock.Hash)
-	chain.blocks = append(chain.blocks, new)
-}
-
-func Genesis() *Block {
-	return CreateBlock("Genesis", []byte{})
-}
-
-func InitBlockChain() *BlockChain {
-	return &BlockChain{[]*Block{Genesis()}}
-}
-
 func main() {
-	chain := InitBlockChain()
+	chain := blockchain.InitBlockChain()
+
 	chain.AddBlock("First Block after Genesis")
 	chain.AddBlock("Second Block after Genesis")
 	chain.AddBlock("Third Block after Genesis")
 
-	for _, block := range chain.blocks {
-		fmt.Printf("Previous Hash : %x\n", block.PrevHash)
-		fmt.Printf("Data in Block : %s\n", block.Data)
-		fmt.Printf("Hash : %x\n", block.Hash)
+	for _, block := range chain.Blocks {
+
+		fmt.Printf("Previous Hash: %x\n", block.PrevHash)
+		fmt.Printf("Data in Block: %s\n", block.Data)
+		fmt.Printf("Hash: %x\n", block.Hash)
+
+		pow := blockchain.NewProof(block)
+		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+		fmt.Println()
 	}
 }
