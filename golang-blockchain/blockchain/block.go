@@ -8,22 +8,36 @@ import (
 )
 
 type Block struct {
-	Hash     []byte // Hash of the Block
-	Data     []byte // Contents of the Block
-	PrevHash []byte // Last Block Hash -> Link the Blocks
-	Nonce    int
+	Hash []byte // Hash of the Block
+	//Data     []byte // Contents of the Block
+	Transaction []*Transaction
+	PrevHash    []byte // Last Block Hash -> Link the Blocks
+	Nonce       int
 }
 
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transaction {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
+}
+
+/*
 // Caculate the Hash Value of the Block
 func (b *Block) DeriveHash() {
 	info := bytes.Join([][]byte{b.Data, b.PrevHash}, []byte{})
 	hash := sha256.Sum256(info)
 	b.Hash = hash[:]
 }
-
+*/
 // Create Block- Params(data,prevHash)
-func CreateBlock(data string, prevHash []byte) *Block {
-	block := &Block{[]byte{}, []byte(data), prevHash, 0}
+func CreateBlock(txs []*Transaction, prevHash []byte) *Block {
+	block := &Block{[]byte{}, txs, prevHash, 0}
 	pow := NewProof(block)
 	nonce, hash := pow.Run()
 
@@ -32,8 +46,8 @@ func CreateBlock(data string, prevHash []byte) *Block {
 	return block
 }
 
-func Genesis() *Block {
-	return CreateBlock("Genesis", []byte{})
+func Genesis(coinbase *Transaction) *Block {
+	return CreateBlock([]*Transaction{coinbase}, []byte{})
 }
 
 func (b *Block) Serialize() []byte {
